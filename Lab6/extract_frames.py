@@ -1,22 +1,40 @@
 import os
+from pathlib import Path
 
-# this assumes you are in the working directory for Lecture7, and the videos are stored in directory UCF11_updated_mpg 
-c_d = os.listdir('.')
-if 'data' not in c_d:
-    os.mkdir('data')
+main_source_dir = Path('../data/lab6/ucf11_combined')
+# this sorts all files except files starting with '.' - e.g. .ipynb_checkpoints
+source_data = sorted(main_source_dir.glob('[!.]*'))
+target_data = Path('../data/lab6')
 
-main_source_dir = 'ucf11_combined'
-source_data = sorted(os.listdir(main_source_dir), key = lambda x: x.lower())
-target_data = os.listdir('data')
-print(source_data)
-# this extracts frames from one video for every class
+##### from ffmpeg docs:
+# ffmpeg -i movie.mpg movie%d.jpg
+# https://ffmpeg.org/faq.html#How-do-I-encode-movie-to-single-pictures_003f
+#####
+
+train = []
+test = []
+val = []
 for d in source_data:
-    # this returns allvideos in the directory
-    all_video_dir = sorted(os.listdir(os.path.join(main_source_dir, d)), key= lambda x:x.lower())
-    source_video_file = all_video_dir[0]
-    # create the directory for the frames from just this video
-    target_dir = os.path.join('data', d+'_0')    
-    if not d+'_0' in os.listdir('data'):
-       os.mkdir(target_dir)
-    # use ffmpeg to extract 1 FPS into the target dir
-    os.system("ffmpeg -i {0:} {1:}/%05d.jpg".format(os.path.join(os.path.join(main_source_dir, d), source_video_file), target_dir)) 
+    # ignore .ipynb_checkpoint folder. Don't need to sort in a special way.
+    all_vids = sorted(d.glob('[!.]*'))
+    # videos are grouped into 25 groups with similarities within group.
+    # so groups cannot be split across test/train/split. File name is of format
+    # v_[category]_[group]_[numnber within group], so split by group number
+    # into test/train/split
+    for vid in all_vids:
+        group = int(vid.stem.split('_')[-2])
+        if group < 16:
+            train.append(vid)
+        elif group >15 and group <21:
+            test.append(vid)
+        elif group >20:
+            val.append(vid)
+
+# iterate through test/train/split, split vids into frames and save in
+# test/train/val folder. Eech video has its own directory.
+for test_set, set_str in ((train, 'train'), (test, 'test'), (val, 'val')):
+    for vid in test_set:
+        p = target_data/('ucf11_' + set_str + '_data')
+        p = p/vid.stem
+        p.mkdir(exist_ok=True)
+        os.system("ffmpeg -i {:} {:}/%05d.jpg".format(str(vid), str(p)))

@@ -23,7 +23,7 @@ class DatasetUCF11(data.Dataset):
                                         key = lambda x: int(x.stem))
             video_sequence = []
             # add random starting frame
-            rand_start = torch.randint(0, len(self.list_of_frames)-50, (1,)).item() 
+            rand_start = torch.randint(0, len(self.list_of_frames)-self.seq_length, (1,)).item() 
             for num in range(rand_start, self.seq_length+rand_start):
                 # should it be RGB?
                 im = self.transforms(Image.open(self.list_of_frames[num]).convert("RGB"))
