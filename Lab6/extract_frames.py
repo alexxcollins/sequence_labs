@@ -33,8 +33,10 @@ for d in source_data:
 # iterate through test/train/split, split vids into frames and save in
 # test/train/val folder. Eech video has its own directory.
 for test_set, set_str in ((train, 'train'), (test, 'test'), (val, 'val')):
+    test_set_folder = target_data/('ucf11_' + set_str + '_data')
+    test_set_folder.mkdir(exist_ok=True)
     for vid in test_set:
-        p = target_data/('ucf11_' + set_str + '_data')
-        p = p/vid.stem
+        p = test_set_folder/vid.stem
         p.mkdir(exist_ok=True)
         os.system("ffmpeg -i {:} {:}/%05d.jpg".format(str(vid), str(p)))
+        
